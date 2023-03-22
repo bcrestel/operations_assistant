@@ -1,6 +1,6 @@
 ###################
 # PARAMETERS TO MODIFY
-IMAGE_NAME = image_name
+IMAGE_NAME = opass
 IMAGE_TAG = 1.0
 ###################
 # FIXED PARAMETERS
@@ -20,7 +20,7 @@ build: .build
 
 .build: Dockerfile requirements.txt
 	$(info ***** Building Image *****)
-	docker build -t $(DOCKER_IMAGE) .
+	docker build --rm -t $(DOCKER_IMAGE) .
 	@touch .build
 
 requirements.txt: .build_piptools requirements.in
@@ -31,7 +31,7 @@ requirements.txt: .build_piptools requirements.in
 
 .build_piptools: Dockerfile_piptools
 	$(info ***** Building Image piptools:1.0 *****)
-	docker build -f $(DOCKERFILE_PIPTOOLS) -t $(DOCKER_IMAGE_PIPTOOLS) .
+	docker build --rm -f $(DOCKERFILE_PIPTOOLS) -t $(DOCKER_IMAGE_PIPTOOLS) .
 	@touch .build_piptools
 
 .PHONY : upgrade
@@ -67,6 +67,17 @@ notebook: build
 mlflow_server: build
 	$(info ***** Starting the mlflow server *****)
 	$(DOCKER_RUN) -p 5000:5000 $(DOCKER_IMAGE) -c "mlflow server -h 0.0.0.0"
+
+# Assembly AI
+.PHONY: assemblyai
+assemblyai: Dockerfile_assemblyai
+	$(info ***** Starting container for AssemblyAI API *****)
+	docker run -it --entrypoint=bash -v $(PWD):/home -e ASSEMBLYAI_API_KEY=$(ASSEMBLYAI_API_KEY) assemblyai:latest
+
+.PHONY: build_assemblyai
+build_assemblyai: Dockerfile_assemblyai
+	$(info ***** Building image for AssemblyAI API *****)
+	docker build --rm  -f Dockerfile_assemblyai -t assemblyai:latest .
 
 #
 # Testing
